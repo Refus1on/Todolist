@@ -1,8 +1,7 @@
 services:
 
   api:
-    build: .
-    image: refusion/todolist
+    image: refusion/todolist:$GITHUB_REF_NAME-$GITHUB_RUN_ID
     restart: always
     command: python ./src/manage.py runserver 0.0.0.0:8000
     volumes:
@@ -10,7 +9,7 @@ services:
     ports:
       - 8000:8000
     env_file:
-      - src/.env
+      - .env.prod
     depends_on:
       db:
           condition: service_healthy
@@ -24,9 +23,9 @@ services:
     volumes:
       - ./pg_data/db:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=todolist
+      POSTGRES_USER: $DB_USER
+      POSTGRES_PASSWORD: $DB_PASSWORD
+      POSTGRES_DB: $DB_NAME
     ports:
       - "5432:5432"
     healthcheck:
@@ -45,14 +44,12 @@ services:
         condition: service_started
 
   migrate:
-    build:
-      context: .
-    image: refusion/todolist
+    image: refusion/todolist:$GITHUB_REF_NAME-$GITHUB_RUN_ID
     command: python ./src/manage.py migrate
     volumes:
       - .:/code
     env_file:
-      - src/.env
+      - .env.prod
     depends_on:
       db:
         condition: service_healthy

@@ -45,5 +45,15 @@ jobs:
           source: "deploy/docker-compose.yaml,deploy/.env"
           target: "todolist_app_ci"
           strip_components: 1
+      - name: deploy app
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          script: |
+            cd todolist_app_ci
+            echo ${{ secrets.PASSWORD }} | sudo -S docker-compose up -d
+            
 
       

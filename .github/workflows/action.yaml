@@ -14,7 +14,7 @@ jobs:
     steps:
 #       Копируем код из репозитория в runner
       - name: clone code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 #       Собераем
       - name: docker build
         run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/todolist:$GITHUB_REF_NAME-$GITHUB_RUN_ID .
@@ -36,21 +36,27 @@ jobs:
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
     steps:
       - name: clone code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 #        вставляем переменные в файлы
-      - name: render configs
+      - name: decrypt ansible
+        uses: anthonykgross/ansible-vault-cli-github-action@v1
+        with:
+          vault_key: ${{ secrets.ANSIBLE_PASSWORD }}
+          command: "ansible-vault decrypt deploy/.env"
+      - name: Update compose
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
-          mkdir deploy
-          cat docker-compose-ci.yaml | envsubst > deploy/docker-compose.yaml
-          cat docker-config-ci | envsubst > deploy/docker-config
+          envsubst '$DOCKERHUB_USERNAME' < deploy/docker-compose.yaml > deploy/tmp.docker-compose.yaml
+          mv deploy/tmp.docker-compose.yaml deploy/docker-compose.yaml
       - name: copy files to server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          source: "deploy/docker-compose.yaml,deploy/docker-config"
-          target: "todolist_app_ci"
+          source: "deploy/*"
+          target: "todolist"
           strip_components: 1
       - name: deploy app
         uses: appleboy/ssh-action@master
@@ -59,7 +65,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            cd todolist_app_ci
+            cd todolist
             echo ${{ secrets.PASSWORD }} | sudo -S docker compose up -d
             
 

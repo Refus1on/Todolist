@@ -1,10 +1,7 @@
 # название
 name: Build and deploy action
-# событие пуш проекта на сервер только тогда когда есть тег
-on:
-  push:
-    tags:
-      - 'v*'
+# событие
+on: [push]
 # что будет происходить после пуша
 jobs:
   build_and_push:
@@ -14,21 +11,19 @@ jobs:
     steps:
 #       Копируем код из репозитория в runner
       - name: clone code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 #       Собераем
       - name: docker build
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/todolist:$GITHUB_REF_NAME-$GITHUB_RUN_ID .
+        run: docker build -t refusion/todolist:$GITHUB_REF_NAME-$GITHUB_RUN_ID .
 #        Логинимся в докер хаб
       - name: docker login
         run: echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
 #        Пушим образ в докер хаб
       - name: docker push
-        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/todolist:$GITHUB_REF_NAME-$GITHUB_RUN_ID
+        run: docker push refusion/todolist:$GITHUB_REF_NAME-$GITHUB_RUN_ID
   deploy:
     runs-on: ubuntu-latest
-#    ожидаем пока не закочится joba
     needs: build_and_push
-#    прописываем переменные которые используются в файлах
     env:
       DB_USER: ${{ secrets.DB_USER }}
       DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -36,29 +31,20 @@ jobs:
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
     steps:
       - name: clone code
-        uses: actions/checkout@v3
-#        вставляем переменные в файлы
-      - uses: anthonykgross/ansible-vault-cli-github-action@v1
-        with:
-          vault_key: ${{ secrets.ANSIBLE_PASSWORD }}
-          command: "ansible-vault decrypt deploy/todolist-config"
-      - name: Update compose
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-        run: |
-          envsubst '$DOCKERHUB_USERNAME' < deploy/docker-compose.yaml > deploy/tmp.docker-compose.yaml
-          mv deploy/tmp.docker-compose.yaml deploy/docker-compose.yaml
+        uses: actions/checkout@v2
       - name: render configs
         run: |
-          cat deploy/todolist-config | envsubst > deploy/.env
+          mkdir deploy
+          cat docker-compose-ci.yaml | envsubst > deploy/docker-compose.yaml
+          cat docker-config-ci | envsubst > deploy/docker-config
       - name: copy files to server
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          source: "deploy/*"
-          target: todolist
+          source: "deploy/docker-compose.yaml,deploy/docker-config"
+          target: "todolist_app_ci"
           strip_components: 1
       - name: deploy app
         uses: appleboy/ssh-action@master
@@ -67,7 +53,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
           script: |
-            cd todolist
+            cd todolist_app_ci
             echo ${{ secrets.PASSWORD }} | sudo -S docker compose up -d
             
 

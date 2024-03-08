@@ -50,6 +50,9 @@ jobs:
           mv deploy/tmp.docker-compose.yaml deploy/docker-compose.yaml
       - name: copy files to server
         uses: appleboy/scp-action@master
+      - name: render configs
+        run: |
+          cat deploy/todolist-config | envsubst > deploy/.env
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}

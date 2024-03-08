@@ -54,8 +54,8 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           password: ${{ secrets.PASSWORD }}
-          source: "deploy/.env"
-          target: "todolist"
+          source: "deploy/*"
+          target: todolist
           strip_components: 1
       - name: deploy app
         uses: appleboy/ssh-action@master

@@ -3,9 +3,13 @@ from django.urls import path
 from goals import views
 
 urlpatterns = [
-    path('goal_category/create', views.CategoryCreateView.as_view(), name="category-create"),
-    path('goal_category/list', views.CategoryListView.as_view(), name="category-list"),
-    path('goal_category/<pk>', views.CategoryView.as_view(), name="category-retrieve-update-destroy"),
+    path('board/create', views.BoardCreateView.as_view(), name="board-create"),
+    path('board/list', views.BoardListView.as_view(), name="board-list"),
+    path('board/<pk>', views.BoardView.as_view(), name="board-retrieve-update-destroy"),
+
+    path('goal_category/create', views.GoalCategoryCreateView.as_view(), name="category-create"),
+    path('goal_category/list', views.GoalCategoryListView.as_view(), name="category-list"),
+    path('goal_category/<pk>', views.GoalCategoryView.as_view(), name="category-retrieve-update-destroy"),
 
     path('goal/create', views.GoalCreateView.as_view(), name="goal-create"),
     path('goal/list', views.GoalListView.as_view(), name="goal-list"),

@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'social_django',
     'core.apps.CoreConfig',
     'goals.apps.GoalsConfig',
+    'bot.apps.BotConfig',
 ]
 
 MIDDLEWARE = [
@@ -157,3 +158,5 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
 )
 SOCIAL_AUTH_URL_NAMESPACE = 'social'
+
+BOT_TOKEN = env('BOT_TOKEN')
